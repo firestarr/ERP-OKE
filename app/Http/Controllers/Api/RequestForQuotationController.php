@@ -4,6 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\RequestForQuotation;
+use App\Models\Vendor;
+use App\Models\VendorQuotation;
 use App\Http\Requests\RequestForQuotationRequest;
 use App\Services\RFQNumberGenerator;
 use Illuminate\Http\Request;
@@ -222,5 +224,121 @@ class RequestForQuotationController extends Controller
             'message' => 'RFQ status updated successfully',
             'data' => $requestForQuotation
         ]);
+    }
+
+    /**
+     * Get available vendors for creating vendor quotation (vendors that haven't submitted quotation for this RFQ)
+     */
+    public function getAvailableVendors(Request $request, $rfqId)
+    {
+        try {
+            // Check if RFQ exists
+            $rfq = RequestForQuotation::find($rfqId);
+            if (!$rfq) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Request For Quotation not found'
+                ], 404);
+            }
+
+            // Check if RFQ is in 'sent' status (only 'sent' RFQs can have vendor quotations)
+            if ($rfq->status !== 'sent') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Vendor quotations can only be created for RFQs with status "sent"',
+                    'data' => []
+                ], 400);
+            }
+
+            // Get vendor IDs that already have quotations for this RFQ
+            $vendorsWithQuotations = VendorQuotation::where('rfq_id', $rfqId)
+                ->pluck('vendor_id')
+                ->toArray();
+
+            // Get all active vendors that don't have quotations for this RFQ yet
+            $availableVendors = Vendor::where('status', 'active')
+                ->whereNotIn('vendor_id', $vendorsWithQuotations)
+                ->select('vendor_id', 'vendor_code', 'name', 'contact_person', 'email', 'phone', 'preferred_currency')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Available vendors retrieved successfully',
+                'data' => [
+                    'rfq' => [
+                        'rfq_id' => $rfq->rfq_id,
+                        'rfq_number' => $rfq->rfq_number,
+                        'status' => $rfq->status,
+                        'rfq_date' => $rfq->rfq_date,
+                        'validity_date' => $rfq->validity_date
+                    ],
+                    'vendors' => $availableVendors,
+                    'vendors_with_quotations_count' => count($vendorsWithQuotations),
+                    'available_vendors_count' => $availableVendors->count()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to retrieve available vendors',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get vendors that already submitted quotations for this RFQ
+     */
+    public function getVendorsWithQuotations($rfqId)
+    {
+        try {
+            $rfq = RequestForQuotation::find($rfqId);
+            if (!$rfq) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Request For Quotation not found'
+                ], 404);
+            }
+
+            // Get vendors with their quotations for this RFQ
+            $vendorsWithQuotations = VendorQuotation::with(['vendor'])
+                ->where('rfq_id', $rfqId)
+                ->get()
+                ->map(function($quotation) {
+                    return [
+                        'quotation_id' => $quotation->quotation_id,
+                        'vendor_id' => $quotation->vendor_id,
+                        'vendor_code' => $quotation->vendor->vendor_code,
+                        'vendor_name' => $quotation->vendor->name,
+                        'quotation_date' => $quotation->quotation_date,
+                        'validity_date' => $quotation->validity_date,
+                        'status' => $quotation->status,
+                        'currency_code' => $quotation->currency_code,
+                        'total_amount' => $quotation->total_amount
+                    ];
+                });
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'rfq' => [
+                        'rfq_id' => $rfq->rfq_id,
+                        'rfq_number' => $rfq->rfq_number,
+                        'status' => $rfq->status
+                    ],
+                    'vendors_with_quotations' => $vendorsWithQuotations,
+                    'count' => $vendorsWithQuotations->count()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to retrieve vendors with quotations',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

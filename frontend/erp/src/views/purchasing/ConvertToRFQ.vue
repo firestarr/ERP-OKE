@@ -437,7 +437,7 @@
 
         try {
           const response = await axios.get('/vendors?is_active=true');
-          this.vendors = response.data.data || [];
+          this.vendors = response.data.data.data || [];
         } catch (error) {
           console.error('Error fetching vendors:', error);
           this.vendors = [];

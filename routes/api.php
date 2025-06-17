@@ -201,11 +201,36 @@ Route::middleware('auth:sanctum')->group(function () {
     // Request For Quotations
     Route::apiResource('request-for-quotations', RequestForQuotationController::class);
     Route::patch('request-for-quotations/{requestForQuotation}/status', [RequestForQuotationController::class, 'updateStatus']);
+    Route::get('request-for-quotations/{id}/vendors', [RequestForQuotationController::class, 'getVendors']);
+    // NEW ROUTES: Get available vendors for RFQ (add these BEFORE the generic {id} routes)
+    Route::get('request-for-quotations/{rfqId}/available-vendors', [RequestForQuotationController::class, 'getAvailableVendors']);
+    Route::get('request-for-quotations/{rfqId}/vendors-with-quotations', [RequestForQuotationController::class, 'getVendorsWithQuotations']);
 
-    // Vendor Quotations
-    Route::apiResource('vendor-quotations', VendorQuotationController::class);
-    Route::patch('vendor-quotations/{vendorQuotation}/status', [VendorQuotationController::class, 'updateStatus']);
-    Route::post('vendor-quotations/create-from-rfq', [VendorQuotationController::class, 'createFromRFQ']);
+    // Enhanced Vendor Quotations with Multi-Currency Support
+    Route::prefix('vendor-quotations')->group(function () {
+        // Basic CRUD operations
+        Route::get('/', [VendorQuotationController::class, 'index']);
+        Route::post('/', [VendorQuotationController::class, 'store']);
+        Route::get('/{vendorQuotation}', [VendorQuotationController::class, 'show']);
+        Route::put('/{vendorQuotation}', [VendorQuotationController::class, 'update']);
+        Route::delete('/{vendorQuotation}', [VendorQuotationController::class, 'destroy']);
+        
+        // Status management
+        Route::patch('/{vendorQuotation}/status', [VendorQuotationController::class, 'updateStatus']);
+        
+        // Multi-currency features
+        Route::post('/{vendorQuotation}/convert-currency', [VendorQuotationController::class, 'convertCurrency']);
+        Route::get('/compare/in-currency', [VendorQuotationController::class, 'compareInCurrency']);
+        Route::get('/available-currencies', [VendorQuotationController::class, 'getAvailableCurrencies']);
+        
+        // Export functionality
+        Route::get('/export', [VendorQuotationController::class, 'exportToExcel']);
+        Route::get('/export/comparison', [VendorQuotationController::class, 'exportComparison']);
+        
+        // Template and import
+        Route::get('/template/download', [VendorQuotationController::class, 'downloadTemplate']);
+        Route::post('/import', [VendorQuotationController::class, 'importFromExcel']);
+    });
 
     // Purchase Orders
     Route::apiResource('purchase-orders', PurchaseOrderController::class);
@@ -387,6 +412,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [SalesForecastController::class, 'destroy']);
     });
 
+    // AI Excel Forecast Processing Routes
+    Route::prefix('ai-excel-forecast')->group(function () {
+        Route::post('/process', [App\Http\Controllers\Api\sales\AIExcelForecastController::class, 'processExcelWithAI']);
+        Route::post('/save', [App\Http\Controllers\Api\sales\AIExcelForecastController::class, 'saveExtractedForecasts']);
+        Route::get('/history', [App\Http\Controllers\Api\sales\AIExcelForecastController::class, 'getProcessingHistory']);
+    });
+
     // Routes untuk Outstanding Sales Order
     Route::get('sales-orders/{id}/outstanding-items', 'Api\Sales\SalesOrderController@getOutstandingItems');
     Route::get('sales-orders/outstanding', 'Api\Sales\SalesOrderController@getAllOutstandingSalesOrders');
@@ -484,13 +516,11 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Stock Adjustment Routes
-    Route::prefix('stock-adjustments')->group(function () {
-        Route::get('/', [StockAdjustmentController::class, 'index']);
-        Route::post('/', [StockAdjustmentController::class, 'store']);
-        Route::get('/{id}', [StockAdjustmentController::class, 'show']);
-        Route::patch('/{id}/approve', [StockAdjustmentController::class, 'approve']);
-        Route::patch('/{id}/cancel', [StockAdjustmentController::class, 'cancel']);
-    });
+    Route::apiResource('stock-adjustments', StockAdjustmentController::class);
+    Route::post('stock-adjustments/{id}/submit', [StockAdjustmentController::class, 'submit']);
+    Route::post('stock-adjustments/{id}/approve', [StockAdjustmentController::class, 'approve']);
+    Route::post('stock-adjustments/{id}/reject', [StockAdjustmentController::class, 'reject']);
+    Route::post('stock-adjustments/{id}/process', [StockAdjustmentController::class, 'process']);
 
     // Manufacturing Module Routes
     // Products
@@ -657,12 +687,13 @@ Route::middleware('auth:sanctum')->group(function () {
         // Currency Rates Management
         Route::get('currency-rates', [App\Http\Controllers\Api\CurrencyRateController::class, 'index']);
         Route::post('currency-rates', [App\Http\Controllers\Api\CurrencyRateController::class, 'store']);
-        Route::get('currency-rates/{id}', [App\Http\Controllers\Api\CurrencyRateController::class, 'show']);
-        Route::put('currency-rates/{id}', [App\Http\Controllers\Api\CurrencyRateController::class, 'update']);
-        Route::delete('currency-rates/{id}', [App\Http\Controllers\Api\CurrencyRateController::class, 'destroy']);
 
         // Currency Converter utility
         Route::get('currency-rates/current-rate', [App\Http\Controllers\Api\CurrencyRateController::class, 'getCurrentRate']);
+
+        Route::get('currency-rates/{id}', [App\Http\Controllers\Api\CurrencyRateController::class, 'show']);
+        Route::put('currency-rates/{id}', [App\Http\Controllers\Api\CurrencyRateController::class, 'update']);
+        Route::delete('currency-rates/{id}', [App\Http\Controllers\Api\CurrencyRateController::class, 'destroy']);
     });
 
     // PDF Order Capture RoutesAdd commentMore actions
