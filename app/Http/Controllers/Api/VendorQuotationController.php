@@ -73,6 +73,153 @@ class VendorQuotationController extends Controller
         ]);
     }
 
+    public function createFromRFQ(Request $request)
+    {
+        $request->validate([
+            'rfq_id' => 'required|exists:request_for_quotations,rfq_id',
+            'vendor_id' => 'required|exists:vendors,vendor_id',
+            'quotation_date' => 'required|date',
+            'validity_date' => 'nullable|date',
+            'currency_code' => 'nullable|string|size:3',
+            'exchange_rate' => 'nullable|numeric',
+            'notes' => 'nullable|string',
+            'payment_terms' => 'nullable|string',
+            'delivery_terms' => 'nullable|string',
+            'lines' => 'nullable|array',
+            'lines.*.item_id' => 'required_with:lines|exists:items,item_id',
+            'lines.*.unit_price' => 'required_with:lines|numeric',
+            'lines.*.uom_id' => 'required_with:lines|exists:unit_of_measures,uom_id',
+            'lines.*.quantity' => 'required_with:lines|numeric',
+            'lines.*.delivery_date' => 'nullable|date',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $rfq = RequestForQuotation::findOrFail($request->rfq_id);
+
+            // Check RFQ status
+            if ($rfq->status !== 'sent') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Vendor quotations can only be created for RFQs with status "sent"'
+                ], 400);
+            }
+
+            $vendor = Vendor::findOrFail($request->vendor_id);
+
+            if ($vendor->status !== 'active') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Vendor quotations can only be created for active vendors'
+                ], 400);
+            }
+
+            // Check if quotation already exists for this vendor and RFQ
+            $existingQuotation = VendorQuotation::where('rfq_id', $request->rfq_id)
+                ->where('vendor_id', $request->vendor_id)
+                ->first();
+
+            if ($existingQuotation) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'A quotation from this vendor for this RFQ already exists',
+                    'data' => [
+                        'existing_quotation_id' => $existingQuotation->quotation_id,
+                        'existing_quotation_date' => $existingQuotation->quotation_date,
+                        'existing_quotation_status' => $existingQuotation->status
+                    ]
+                ], 400);
+            }
+
+            $exchangeRate = $request->exchange_rate;
+            $currencyCode = $request->currency_code ?? $vendor->preferred_currency ?? config('app.base_currency');
+
+            if (!$exchangeRate && $currencyCode !== config('app.base_currency')) {
+                try {
+                    $exchangeRate = $this->getExchangeRate(
+                        $currencyCode,
+                        config('app.base_currency'),
+                        $request->quotation_date
+                    );
+                } catch (\Exception $e) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Exchange rate is required but could not be retrieved automatically: ' . $e->getMessage(),
+                        'details' => [
+                            'currency_code' => $currencyCode,
+                            'quotation_date' => $request->quotation_date,
+                            'suggestion' => 'Please provide exchange_rate in the request'
+                        ]
+                    ], 422);
+                }
+            } else if ($currencyCode === config('app.base_currency')) {
+                $exchangeRate = 1.0;
+            }
+
+            $totalAmount = 0;
+            if ($request->has('lines') && is_array($request->lines)) {
+                foreach ($request->lines as $line) {
+                    $lineSubtotal = ($line['quantity'] ?? 0) * ($line['unit_price'] ?? 0);
+                    $totalAmount += $lineSubtotal;
+                }
+            }
+
+            $vendorQuotation = VendorQuotation::create([
+                'rfq_id' => $request->rfq_id,
+                'vendor_id' => $request->vendor_id,
+                'quotation_date' => $request->quotation_date,
+                'validity_date' => $request->validity_date,
+                'currency_code' => $currencyCode,
+                'exchange_rate' => $exchangeRate,
+                'status' => 'received',
+                'notes' => $request->notes,
+                'payment_terms' => $request->payment_terms,
+                'delivery_terms' => $request->delivery_terms,
+                'total_amount' => $totalAmount,
+                'base_currency_total' => $totalAmount * $exchangeRate
+            ]);
+
+            if ($request->has('lines') && is_array($request->lines)) {
+                foreach ($request->lines as $line) {
+                    $lineQuantity = $line['quantity'] ?? 0;
+                    $lineUnitPrice = $line['unit_price'] ?? 0;
+                    $lineSubtotal = $lineQuantity * $lineUnitPrice;
+                    $baseCurrencyUnitPrice = $lineUnitPrice * $exchangeRate;
+                    $baseCurrencySubtotal = $lineSubtotal * $exchangeRate;
+
+                    $vendorQuotation->lines()->create([
+                        'item_id' => $line['item_id'],
+                        'unit_price' => $lineUnitPrice,
+                        'uom_id' => $line['uom_id'],
+                        'quantity' => $lineQuantity,
+                        'delivery_date' => $line['delivery_date'] ?? null,
+                        'subtotal' => $lineSubtotal,
+                        'base_currency_unit_price' => $baseCurrencyUnitPrice,
+                        'base_currency_subtotal' => $baseCurrencySubtotal
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Vendor Quotation created successfully from RFQ',
+                'data' => $vendorQuotation->load(['vendor', 'requestForQuotation', 'lines.item', 'lines.unitOfMeasure'])
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to create Vendor Quotation from RFQ',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(VendorQuotationRequest $request)
     {
         try {

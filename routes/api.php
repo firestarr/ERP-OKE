@@ -198,19 +198,30 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('purchase-requisitions', PurchaseRequisitionController::class);
     Route::patch('purchase-requisitions/{purchaseRequisition}/status', [PurchaseRequisitionController::class, 'updateStatus']);
 
-    // Request For Quotations
-    Route::apiResource('request-for-quotations', RequestForQuotationController::class);
-    Route::patch('request-for-quotations/{requestForQuotation}/status', [RequestForQuotationController::class, 'updateStatus']);
-    Route::get('request-for-quotations/{id}/vendors', [RequestForQuotationController::class, 'getVendors']);
-    // NEW ROUTES: Get available vendors for RFQ (add these BEFORE the generic {id} routes)
-    Route::get('request-for-quotations/{rfqId}/available-vendors', [RequestForQuotationController::class, 'getAvailableVendors']);
-    Route::get('request-for-quotations/{rfqId}/vendors-with-quotations', [RequestForQuotationController::class, 'getVendorsWithQuotations']);
+    // Request For Quotations - Enhanced vendor management
+    Route::prefix('request-for-quotations')->group(function () {
+        // Existing routes
+        Route::apiResource('/', RequestForQuotationController::class)->parameters(['' => 'requestForQuotation']);
+        Route::patch('{requestForQuotation}/status', [RequestForQuotationController::class, 'updateStatus']);
+        
+        // Enhanced vendor management routes - TAMBAHAN BARU
+        Route::get('{id}/vendors', [RequestForQuotationController::class, 'getVendors']);
+        Route::patch('{id}/vendors', [RequestForQuotationController::class, 'updateVendors']);
+        Route::patch('{id}/vendors/mark-sent', [RequestForQuotationController::class, 'markVendorsAsSent']);
+        Route::post('{id}/vendors', [RequestForQuotationController::class, 'addVendor']);
+        Route::delete('{id}/vendors/{vendorId}', [RequestForQuotationController::class, 'removeVendor']);
+        
+        // Existing vendor quotation related routes
+        Route::get('{rfqId}/available-vendors', [RequestForQuotationController::class, 'getAvailableVendors']);
+        Route::get('{rfqId}/vendors-with-quotations', [RequestForQuotationController::class, 'getVendorsWithQuotations']);
+    });
 
     // Enhanced Vendor Quotations with Multi-Currency Support
     Route::prefix('vendor-quotations')->group(function () {
         // Basic CRUD operations
         Route::get('/', [VendorQuotationController::class, 'index']);
         Route::post('/', [VendorQuotationController::class, 'store']);
+        Route::post('/create-from-rfq', [VendorQuotationController::class, 'createFromRFQ']);
         Route::get('/{vendorQuotation}', [VendorQuotationController::class, 'show']);
         Route::put('/{vendorQuotation}', [VendorQuotationController::class, 'update']);
         Route::delete('/{vendorQuotation}', [VendorQuotationController::class, 'destroy']);
