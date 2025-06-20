@@ -427,14 +427,149 @@
                         <div class="submenu" v-show="activeSubmenu === 'accounting' && !sidebarCollapsed">
                             <div class="submenu-section">
                                 <h4>Financial Management</h4>
-                                <router-link to="/currency-rates" class="submenu-link">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                    <span>Exchange Rates</span>
-                                </router-link>
-                                <router-link to="/currency-converter" class="submenu-link">
-                                    <i class="fas fa-exchange-alt"></i>
-                                    <span>Currency Converter</span>
-                                </router-link>
+                                <!-- Financial Setup -->
+                                <div class="submenu-section">
+                                    <h4>Financial Setup</h4>
+                                    <router-link to="/currency-rates" class="submenu-link">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        <span>Exchange Rates</span>
+                                    </router-link>
+                                    <router-link to="/currency-converter" class="submenu-link">
+                                        <i class="fas fa-exchange-alt"></i>
+                                        <span>Currency Converter</span>
+                                    </router-link>
+                                    <router-link to="/accounting/chart-of-accounts" class="submenu-link">
+                                        <i class="fas fa-sitemap"></i>
+                                        <span>Chart of Accounts</span>
+                                    </router-link>
+                                    <router-link to="/accounting/periods" class="submenu-link">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <span>Accounting Periods</span>
+                                    </router-link>
+                                </div>
+
+                                <!-- Journals & Transactions -->
+                                <div class="submenu-section">
+                                    <h4>Journals & Transactions</h4>
+                                    <router-link to="/accounting/journal-entries" class="submenu-link">
+                                        <i class="fas fa-edit"></i>
+                                        <span>Journal Entries</span>
+                                    </router-link>
+                                    <router-link to="/accounting/journal-entries/post" class="submenu-link">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Post Entries</span>
+                                    </router-link>
+                                    <router-link to="/accounting/journal-entries/batch-upload" class="submenu-link">
+                                        <i class="fas fa-upload"></i>
+                                        <span>Batch Upload</span>
+                                    </router-link>
+                                </div>
+
+                                <!-- Banking -->
+                                <div class="submenu-section">
+                                    <h4>Banking</h4>
+                                    <router-link to="/accounting/bank-accounts" class="submenu-link">
+                                        <i class="fas fa-university"></i>
+                                        <span>Bank Accounts</span>
+                                    </router-link>
+                                    <router-link to="/accounting/bank-transactions" class="submenu-link">
+                                        <i class="fas fa-exchange-alt"></i>
+                                        <span>Bank Transactions</span>
+                                    </router-link>
+                                    <router-link to="/accounting/bank-reconciliations" class="submenu-link">
+                                        <i class="fas fa-balance-scale"></i>
+                                        <span>Bank Reconciliations</span>
+                                    </router-link>
+                                </div>
+
+                                <!-- Customer Receivables -->
+                                <div class="submenu-section">
+                                    <h4>Customer Receivables</h4>
+                                    <router-link to="/receivables" class="submenu-link">
+                                        <i class="fas fa-file-invoice-dollar"></i>
+                                        <span>Customer Receivables</span>
+                                    </router-link>
+                                    <router-link to="/receivable-payments" class="submenu-link">
+                                        <i class="fas fa-credit-card"></i>
+                                        <span>Receivable Payments</span>
+                                    </router-link>
+                                    <router-link to="/receivables/aging" class="submenu-link">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Receivables Aging</span>
+                                    </router-link>
+                                    <router-link to="/receivables/statement/:customerId" class="submenu-link">
+                                        <i class="fas fa-file-contract"></i>
+                                        <span>Customer Statements</span>
+                                    </router-link>
+                                </div>
+
+                                <!-- Vendor Payables -->
+                                <div class="submenu-section">
+                                    <h4>Vendor Payables</h4>
+                                    <router-link to="/payables" class="submenu-link">
+                                        <i class="fas fa-file-invoice"></i>
+                                        <span>Vendor Payables</span>
+                                    </router-link>
+                                    <router-link to="/accounting/payable-payments" class="submenu-link">
+                                        <i class="fas fa-money-check-alt"></i>
+                                        <span>Payable Payments</span>
+                                    </router-link>
+                                    <router-link to="/accounting/aging-report" class="submenu-link">
+                                        <i class="fas fa-hourglass-half"></i>
+                                        <span>Payables Aging</span>
+                                    </router-link>
+                                    <router-link to="/vendor-statements/:vendorId?" class="submenu-link">
+                                        <i class="fas fa-file-signature"></i>
+                                        <span>Vendor Statements</span>
+                                    </router-link>
+                                </div>
+
+                                <!-- Asset Management -->
+                                <div class="submenu-section">
+                                    <h4>Asset Management</h4>
+                                    <router-link to="/accounting/fixed-assets" class="submenu-link">
+                                        <i class="fas fa-cubes"></i>
+                                        <span>Fixed Assets</span>
+                                    </router-link>
+                                    <router-link to="/accounting/asset-depreciations" class="submenu-link">
+                                        <i class="fas fa-chart-line-down"></i>
+                                        <span>Asset Depreciations</span>
+                                    </router-link>
+                                    <router-link to="/accounting/depreciations/calculate" class="submenu-link">
+                                        <i class="fas fa-calculator"></i>
+                                        <span>Calculate Depreciation</span>
+                                    </router-link>
+                                    <router-link to="/accounting/fixed-assets/report" class="submenu-link">
+                                        <i class="fas fa-file-alt"></i>
+                                        <span>Asset Register Report</span>
+                                    </router-link>
+                                </div>
+
+                                <!-- Budget & Planning -->
+                                <div class="submenu-section">
+                                    <h4>Budget & Planning</h4>
+                                    <router-link to="/budgets" class="submenu-link">
+                                        <i class="fas fa-calculator"></i>
+                                        <span>Budget Management</span>
+                                    </router-link>
+                                    <router-link to="/budgets/analysis/vs-actual" class="submenu-link">
+                                        <i class="fas fa-chart-bar"></i>
+                                        <span>Budget vs Actual</span>
+                                    </router-link>
+                                    <router-link to="/budgets/analysis/variance" class="submenu-link">
+                                        <i class="fas fa-chart-line"></i>
+                                        <span>Variance Analysis</span>
+                                    </router-link>
+                                </div>
+
+                                <!-- Reports & Analytics -->
+                                <div class="submenu-section">
+                                    <h4>Reports & Analytics</h4>
+                                    <router-link to="/accounting" class="submenu-link">
+                                        <i class="fas fa-tachometer-alt"></i>
+                                        <span>Accounting Dashboard</span>
+                                    </router-link>
+                                </div>
                             </div>
                         </div>
                     </div>

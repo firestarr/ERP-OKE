@@ -239,7 +239,7 @@
                   </div>
                 </td>
                 <td class="quantity">{{ formatNumber(line.quantity) }}</td>
-                <td class="uom">{{ line.unitOfMeasure ? line.unitOfMeasure.symbol : 'N/A' }}</td>
+                <td class="uom">{{ line.unit_of_measure ? line.unit_of_measure.symbol : 'N/A' }}</td>
                 <td class="unit-price">{{ formatCurrency(line.unit_price, quotation.currency_code) }}</td>
                 <td v-if="showBaseCurrency" class="base-currency-col">
                   <span class="base-amount">

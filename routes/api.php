@@ -684,7 +684,15 @@ Route::middleware('auth:sanctum')->group(function () {
         // Bank Reconciliations
         Route::post('bank-reconciliations/{id}/finalize', [BankReconciliationController::class, 'finalize']);
         Route::apiResource('bank-reconciliations', BankReconciliationController::class);
-        Route::apiResource('bank-reconciliations.lines', BankReconciliationController::class);
+
+        // Bank Reconciliation Lines
+        Route::get('bank-reconciliations/{id}/lines', [BankReconciliationController::class, 'lines']);
+        Route::post('bank-reconciliations/{id}/lines', [BankReconciliationController::class, 'storeLine']);
+        Route::put('bank-reconciliations/{id}/lines/{lineId}', [BankReconciliationController::class, 'updateLine']);
+        Route::delete('bank-reconciliations/{id}/lines/{lineId}', [BankReconciliationController::class, 'destroyLine']);
+
+        // Bank Transactions
+        Route::apiResource('bank-transactions', BankTransactionController::class);
 
         // Financial Reports
         Route::prefix('reports')->group(function () {

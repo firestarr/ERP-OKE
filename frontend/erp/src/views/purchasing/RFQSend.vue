@@ -666,61 +666,136 @@ export default {
       this.showConfirmationModal = true;
     },
 
-    async sendRFQ() {
-      if (this.selectedVendors.length === 0) {
-        if (this.toast) {
-          this.toast.warning('Please select at least one vendor');
-        }
-        return;
-      }
-      
-      this.isSending = true;
-      
-      try {
-        // Update selected vendors if changed from original selection
-        if (this.isSelectionChanged) {
-          await this.updateSelectedVendors();
-        }
+    // Replace the sendRFQ method in RFQSend.vue with this fixed version
 
-        // Create vendor quotations for selected vendors using the correct payload structure
+// Replace the sendRFQ method in RFQSend.vue with this fixed version
+
+async sendRFQ() {
+  if (this.selectedVendors.length === 0) {
+    if (this.toast) {
+      this.toast.warning('Please select at least one vendor');
+    }
+    return;
+  }
+  
+  this.isSending = true;
+  
+  try {
+    // Update selected vendors if changed from original selection
+    if (this.isSelectionChanged) {
+      await this.updateSelectedVendors();
+    }
+
+    // STEP 1: Update RFQ status to 'sent' FIRST (required before creating quotations)
+    try {
+      await axios.patch(`/request-for-quotations/${this.rfqId}/status`, {
+        status: 'sent'
+      });
+    } catch (error) {
+      throw new Error('Failed to update RFQ status: ' + (error.response?.data?.message || error.message));
+    }
+
+    // STEP 2: Create vendor quotations for each selected vendor individually
+    const quotationDate = new Date().toISOString().substr(0, 10); // Current date in YYYY-MM-DD format
+    const failedVendors = [];
+    const successfulVendors = [];
+
+    for (const vendorId of this.selectedVendors) {
+      try {
         const response = await axios.post('/vendor-quotations/create-from-rfq', {
           rfq_id: this.rfqId,
-          vendor_ids: this.selectedVendors  // Fixed: Send as vendor_ids array, not vendor_quotations
+          vendor_id: vendorId,  // Send individual vendor_id
+          quotation_date: quotationDate,  // Add required quotation_date
+          validity_date: this.rfq.validity_date || null, // Optional validity date from RFQ
+          notes: `Quotation request from RFQ ${this.rfq.rfq_number}`,
+          // ADD LINES FROM RFQ - this is the missing piece!
+          lines: this.rfq.lines ? this.rfq.lines.map(line => ({
+            item_id: line.item_id,
+            quantity: line.quantity,
+            uom_id: line.uom_id,
+            unit_price: 0, // Default price - vendor will update this
+            delivery_date: line.required_date || null
+          })) : []
         });
 
         if (response.data.status === 'success') {
-          // Update RFQ status to 'sent'
-          await axios.patch(`/request-for-quotations/${this.rfqId}/status`, {
-            status: 'sent'
-          });
-
-          // Mark vendors as sent in RFQ
-          await this.markVendorsAsSent();
-          
-          // Close confirmation modal and show success modal
-          this.showConfirmationModal = false;
-          this.showSuccessModal = true;
-          
-          if (this.toast) {
-            this.toast.success(`RFQ sent successfully to ${this.selectedVendors.length} vendor${this.selectedVendors.length > 1 ? 's' : ''}`);
-          }
+          successfulVendors.push(vendorId);
         } else {
-          throw new Error(response.data.message || 'Failed to send RFQ');
+          throw new Error(response.data.message || 'Failed to create quotation');
         }
       } catch (error) {
-        console.error('Error sending RFQ:', error);
-        
-        this.showConfirmationModal = false;
-        
-        const errorMessage = error.response?.data?.message || 'Failed to send RFQ to vendors. Please try again.';
-        
-        if (this.toast) {
-          this.toast.error('Failed to send RFQ: ' + errorMessage);
-        }
-      } finally {
-        this.isSending = false;
+        console.error(`Error creating quotation for vendor ${vendorId}:`, error);
+        failedVendors.push({
+          vendorId,
+          error: error.response?.data?.message || error.message
+        });
       }
-    },
+    }
+
+    // If at least one vendor was successful, mark vendors as sent
+    if (successfulVendors.length > 0) {
+      try {
+        // Mark successful vendors as sent in RFQ
+        if (successfulVendors.length === this.selectedVendors.length) {
+          await this.markVendorsAsSent();
+        }
+      } catch (error) {
+        console.error('Error marking vendors as sent:', error);
+        // Don't fail the entire operation for this
+      }
+    }
+
+    // Close confirmation modal
+    this.showConfirmationModal = false;
+    
+    // Show appropriate success/error messages
+    if (successfulVendors.length === this.selectedVendors.length) {
+      // All vendors successful
+      this.showSuccessModal = true;
+      if (this.toast) {
+        this.toast.success(`RFQ sent successfully to ${successfulVendors.length} vendor${successfulVendors.length > 1 ? 's' : ''}`);
+      }
+    } else if (successfulVendors.length > 0) {
+      // Partial success
+      if (this.toast) {
+        this.toast.warning(`RFQ sent to ${successfulVendors.length} out of ${this.selectedVendors.length} vendors. ${failedVendors.length} failed.`);
+      }
+      this.showSuccessModal = true; // Still show success modal for partial success
+    } else {
+      // All failed - rollback RFQ status to draft
+      try {
+        await axios.patch(`/request-for-quotations/${this.rfqId}/status`, {
+          status: 'draft'
+        });
+      } catch (rollbackError) {
+        console.error('Failed to rollback RFQ status:', rollbackError);
+      }
+      
+      const firstError = failedVendors[0]?.error || 'Unknown error';
+      if (this.toast) {
+        this.toast.error(`Failed to send RFQ to all vendors: ${firstError}`);
+      }
+    }
+
+    // Log failed vendors for debugging
+    if (failedVendors.length > 0) {
+      console.error('Failed vendors:', failedVendors);
+    }
+
+  } catch (error) {
+    console.error('Error in sendRFQ:', error);
+    
+    this.showConfirmationModal = false;
+    
+    const errorMessage = error.response?.data?.message || 'Failed to send RFQ to vendors. Please try again.';
+    
+    if (this.toast) {
+      this.toast.error('Failed to send RFQ: ' + errorMessage);
+    }
+  } finally {
+    this.isSending = false;
+  }
+},
 
     // Update selected vendors if selection changed
     async updateSelectedVendors() {
