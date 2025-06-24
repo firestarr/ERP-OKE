@@ -485,19 +485,19 @@
                                 <!-- Customer Receivables -->
                                 <div class="submenu-section">
                                     <h4>Customer Receivables</h4>
-                                    <router-link to="/receivables" class="submenu-link">
+                                    <router-link to="/accounting/receivables" class="submenu-link">
                                         <i class="fas fa-file-invoice-dollar"></i>
                                         <span>Customer Receivables</span>
                                     </router-link>
-                                    <router-link to="/receivable-payments" class="submenu-link">
+                                    <router-link to="/accounting/receivable-payments" class="submenu-link">
                                         <i class="fas fa-credit-card"></i>
                                         <span>Receivable Payments</span>
                                     </router-link>
-                                    <router-link to="/receivables/aging" class="submenu-link">
+                                    <router-link to="/accounting/receivables/aging" class="submenu-link">
                                         <i class="fas fa-clock"></i>
                                         <span>Receivables Aging</span>
                                     </router-link>
-                                    <router-link to="/receivables/statement/:customerId" class="submenu-link">
+                                    <router-link to="/accounting/receivables/statement/:customerId" class="submenu-link">
                                         <i class="fas fa-file-contract"></i>
                                         <span>Customer Statements</span>
                                     </router-link>
@@ -506,7 +506,7 @@
                                 <!-- Vendor Payables -->
                                 <div class="submenu-section">
                                     <h4>Vendor Payables</h4>
-                                    <router-link to="/payables" class="submenu-link">
+                                    <router-link to="/accounting/payables" class="submenu-link">
                                         <i class="fas fa-file-invoice"></i>
                                         <span>Vendor Payables</span>
                                     </router-link>
@@ -518,7 +518,7 @@
                                         <i class="fas fa-hourglass-half"></i>
                                         <span>Payables Aging</span>
                                     </router-link>
-                                    <router-link to="/vendor-statements/:vendorId?" class="submenu-link">
+                                    <router-link to="/accounting/vendor-statements/:vendorId?" class="submenu-link">
                                         <i class="fas fa-file-signature"></i>
                                         <span>Vendor Statements</span>
                                     </router-link>
@@ -548,15 +548,15 @@
                                 <!-- Budget & Planning -->
                                 <div class="submenu-section">
                                     <h4>Budget & Planning</h4>
-                                    <router-link to="/budgets" class="submenu-link">
+                                    <router-link to="/accounting/budgets" class="submenu-link">
                                         <i class="fas fa-calculator"></i>
                                         <span>Budget Management</span>
                                     </router-link>
-                                    <router-link to="/budgets/analysis/vs-actual" class="submenu-link">
+                                    <router-link to="/accounting/budgets/analysis/vs-actual" class="submenu-link">
                                         <i class="fas fa-chart-bar"></i>
                                         <span>Budget vs Actual</span>
                                     </router-link>
-                                    <router-link to="/budgets/analysis/variance" class="submenu-link">
+                                    <router-link to="/accounting/budgets/analysis/variance" class="submenu-link">
                                         <i class="fas fa-chart-line"></i>
                                         <span>Variance Analysis</span>
                                     </router-link>

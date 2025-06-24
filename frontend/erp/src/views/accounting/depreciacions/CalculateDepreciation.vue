@@ -411,7 +411,7 @@
 
 <script>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+// import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 export default {
@@ -419,7 +419,7 @@ export default {
   components: {
   },
   setup() {
-    const router = useRouter()
+    // const router = useRouter()
     
     // Reactive state
     const loadingAssets = ref(false)

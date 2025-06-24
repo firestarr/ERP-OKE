@@ -21,17 +21,17 @@ class VendorPayableController extends Controller
         $query = VendorPayable::with(['vendor', 'vendorInvoice']);
         
         // Filter by vendor
-        if ($request->has('vendor_id')) {
+        if ($request->filled('vendor_id')) {
             $query->where('vendor_id', $request->vendor_id);
         }
         
         // Filter by status
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
         
         // Filter by due date range
-        if ($request->has('from_date') && $request->has('to_date')) {
+        if ($request->filled('from_date') && $request->filled('to_date')) {
             $query->whereBetween('due_date', [$request->from_date, $request->to_date]);
         }
         
@@ -161,10 +161,10 @@ class VendorPayableController extends Controller
      */
     public function aging(Request $request)
     {
-        $aging = DB::table('vendor_payables')
-            ->join('vendors', 'vendor_payables.vendor_id', '=', 'vendors.vendor_id')
+        $aging = DB::table('VendorPayable')
+            ->join('vendors', 'VendorPayable.vendor_id', '=', 'vendors.vendor_id')
             ->select(
-                'vendor_payables.vendor_id',
+                'VendorPayable.vendor_id',
                 'vendors.name as vendor_name',
                 DB::raw('SUM(CASE WHEN (CURRENT_DATE - due_date) <= 0 THEN balance ELSE 0 END) as current_amount'),
                 DB::raw('SUM(CASE WHEN (CURRENT_DATE - due_date) BETWEEN 1 AND 30 THEN balance ELSE 0 END) as days_1_30'),
@@ -173,8 +173,8 @@ class VendorPayableController extends Controller
                 DB::raw('SUM(CASE WHEN (CURRENT_DATE - due_date) > 90 THEN balance ELSE 0 END) as days_over_90'),
                 DB::raw('SUM(balance) as total_balance')
             )
-            ->where('vendor_payables.status', '!=', 'Paid')
-            ->groupBy('vendor_payables.vendor_id', 'vendors.name')
+            ->where('VendorPayable.status', '!=', 'Paid')
+            ->groupBy('VendorPayable.vendor_id', 'vendors.name')
             ->orderBy('vendors.name')
             ->get();
         

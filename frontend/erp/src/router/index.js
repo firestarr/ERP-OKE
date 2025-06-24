@@ -1600,106 +1600,105 @@ const routes = [
                 component: PdfOrderCapture,
                 meta: { requiresAuth: true },
             },
-                    // ===== CUSTOMER RECEIVABLES =====
-                    {
-                        path: "receivables",
-                        name: "ReceivablesList",
-                        component: ReceivablesList,
-                        meta: { 
-                            requiresAuth: true,
-                            title: "Customer Receivables",
-                            breadcrumb: "Receivables"
-                        }
-                    },
-                    {
-                        path: "receivables/create",
-                        name: "CreateReceivable",
-                        component: ReceivableForm,
-                        meta: { 
-                            requiresAuth: true,
-                            title: "Create Receivable",
-                            breadcrumb: "Create Receivable"
-                        }
-                    },
-                    {
-                        path: "receivables/:id/edit",
-                        name: "EditReceivable",
-                        component: ReceivableForm,
-                        props: true,
-                        meta: { 
-                            requiresAuth: true,
-                            title: "Edit Receivable",
-                            breadcrumb: "Edit Receivable"
-                        }
-                    },
-                    {
-                        path: "receivables/:id",
-                        name: "ReceivableDetail",
-                        component: ReceivableDetail,
-                        props: true,
-                        meta: { 
-                            requiresAuth: true,
-                            title: "Receivable Details",
-                            breadcrumb: "Receivable Details"
-                        }
-                    },
-                    {
-                        path: "receivables/aging",
-                        name: "AgingReport",
-                        component: AgingReport,
-                        meta: { 
-                            requiresAuth: true,
-                            title: "Aging Report",
-                            breadcrumb: "Aging Report"
-                        }
-                    },
-                    {
-                        path: "receivables/statement/:customerId",
-                        name: "CustomerStatement",
-                        component: CustomerStatement,
-                        props: true,
-                        meta: { 
-                            requiresAuth: true,
-                            title: "Customer Statement",
-                            breadcrumb: "Customer Statement"
-                        }
-                    },
-                    
-                    // ===== ADDITIONAL RECEIVABLES ROUTES =====
-                    // Route untuk payment dari receivable detail
-                    {
-                        path: "receivables/:id/payment",
-                        name: "AddReceivablePayment",
-                        component: ReceivableDetail, // Akan open modal payment
-                        props: route => ({ 
-                            id: route.params.id, 
-                            showPaymentModal: true 
-                        }),
-                        meta: { 
-                            requiresAuth: true,
-                            title: "Add Payment",
-                            breadcrumb: "Add Payment"
-                        }
-                    },
-                    
-                    // Route untuk statement dengan parameter khusus
-                    {
-                        path: "receivables/:id/statement",
-                        name: "ReceivableStatement",
-                        component: CustomerStatement,
-                        props: route => ({ 
-                            customerId: route.query.customer_id || route.params.customerId,
-                            receivableId: route.params.id
-                        }),
-                        meta: { 
-                            requiresAuth: true,
-                            title: "Receivable Statement",
-                            breadcrumb: "Statement"
-                        }
-                    },
+            // ===== CUSTOMER RECEIVABLES =====
+            {
+                path: "/accounting/receivables",
+                name: "ReceivablesList",
+                component: ReceivablesList,
+                meta: { 
+                    requiresAuth: true,
+                    title: "Customer Receivables",
+                    breadcrumb: "Receivables"
+                }
+            },
+            {
+                path: "/accounting/receivables/create",
+                name: "CreateReceivable",
+                component: ReceivableForm,
+                meta: { 
+                    requiresAuth: true,
+                    title: "Create Receivable",
+                    breadcrumb: "Create Receivable"
+                }
+            },
+            {
+                path: "/accounting/receivables/:id/edit",
+                name: "EditReceivable",
+                component: ReceivableForm,
+                props: true,
+                meta: { 
+                    requiresAuth: true,
+                    title: "Edit Receivable",
+                    breadcrumb: "Edit Receivable"
+                }
+            },
+            {
+                path: "/accounting/receivables/:id",
+                name: "ReceivableDetail",
+                component: ReceivableDetail,
+                props: true,
+                meta: { 
+                    requiresAuth: true,
+                    title: "Receivable Details",
+                    breadcrumb: "Receivable Details"
+                }
+            },
+            {
+                path: "/accounting/receivables/aging",
+                name: "AgingReport",
+                component: AgingReport,
+                meta: { 
+                    requiresAuth: true,
+                    title: "Aging Report",
+                    breadcrumb: "Aging Report"
+                }
+            },
+            {
+                path: "/accounting/receivables/statement/:customerId",
+                name: "CustomerStatement",
+                component: CustomerStatement,
+                props: true,
+                meta: { 
+                    requiresAuth: true,
+                    title: "Customer Statement",
+                    breadcrumb: "Customer Statement"
+                }
+            },
+            
+            // ===== ADDITIONAL RECEIVABLES ROUTES =====
+            // Route untuk payment dari receivable detail
+            {
+                path: "/accounting/receivables/:id/payment",
+                name: "AddReceivablePayment",
+                component: ReceivableDetail, // Akan open modal payment
+                props: route => ({ 
+                    id: route.params.id, 
+                    showPaymentModal: true 
+                }),
+                meta: { 
+                    requiresAuth: true,
+                    title: "Add Payment",
+                    breadcrumb: "Add Payment"
+                }
+            },
+            
+            // Route untuk statement dengan parameter khusus
+            {
+                path: "/accounting/receivables/:id/statement",
+                name: "ReceivableStatement",
+                component: CustomerStatement,
+                props: route => ({ 
+                    receivableId: route.params.id
+                }),
+                meta: { 
+                    requiresAuth: true,
+                    title: "Receivable Statement",
+                    breadcrumb: "Statement"
+                }
+            },
             // Receivable Payments Routes
             {
-            path: 'receivable-payments',
+            path: '/accounting/receivable-payments',
             name: 'PaymentsList',
             component: PaymentsList,
             meta: { 
@@ -1709,7 +1708,7 @@ const routes = [
             }
             },
             {
-            path: 'receivable-payments/create',
+            path: '/accounting/receivable-payments/create',
             name: 'RecordPayment',
             component: RecordPaymentForm,
             meta: { 
@@ -1719,7 +1718,7 @@ const routes = [
             }
             },
             {
-            path: 'receivable-payments/:id',
+            path: '/accounting/receivable-payments/:id',
             name: 'PaymentDetail',
             component: PaymentDetail,
             meta: { 
@@ -1729,7 +1728,7 @@ const routes = [
             }
             },
             {
-            path: 'receivable-payments/application',
+            path: '/accounting/receivable-payments/application',
             name: 'PaymentApplication',
             component: PaymentApplication,
             meta: { 
@@ -1739,7 +1738,7 @@ const routes = [
             }
             },
             {
-            path: 'receivable-payments/history',
+            path: '/accounting/receivable-payments/history',
             name: 'PaymentHistory',
             component: CustomerPaymentHistory,
             meta: { 
@@ -1749,7 +1748,7 @@ const routes = [
             }
             },
             {
-                path: '/payables',
+                path: '/accounting/payables',
                 name: 'PayablesList',
                 component: PayablesList,
                 meta: {
@@ -1759,7 +1758,7 @@ const routes = [
                 }
             },
             {
-                path: '/payables/create',
+                path: '/accounting/payables/create',
                 name: 'CreatePayable',
                 component: PayableForm,
                 meta: {
@@ -1769,7 +1768,7 @@ const routes = [
                 }
             },
             {
-                path: '/payables/:id/edit',
+                path: '/accounting/payables/:id/edit',
                 name: 'EditPayable',
                 component: PayableForm,
                 meta: {
@@ -1779,7 +1778,7 @@ const routes = [
                 }
             },
             {
-                path: '/payables/:id',
+                path: '/accounting/payables/:id',
                 name: 'PayableDetail',
                 component: PayableDetail,
                 meta: {
@@ -1790,7 +1789,7 @@ const routes = [
             },
             {
                 path: '/accounting/aging-report',
-                name: 'AgingReport',
+                name: 'payAgingReport',
                 component: PayAgingReport,
                 meta: {
                 title: 'Aging Report',
@@ -1799,7 +1798,7 @@ const routes = [
                 }
             },
             {
-                path: '/vendor-statements/:vendorId?',
+                path: '/accounting/vendor-statements/:vendorId?',
                 name: 'VendorStatement',
                 component: VendorStatement,
                 meta: {
@@ -1918,7 +1917,7 @@ const routes = [
             },
             // Budget Management Routes
             {
-                path: '/budgets',
+                path: '/accounting/budgets',
                 name: 'BudgetsList',
                 component: BudgetsList,
                 meta: {
@@ -1931,7 +1930,7 @@ const routes = [
                 }
             },
             {
-                path: '/budgets/create',
+                path: '/accounting/budgets/create',
                 name: 'BudgetCreate',
                 component: BudgetForm,
                 meta: {
@@ -1945,7 +1944,7 @@ const routes = [
                 }
             },
             {
-                path: '/budgets/:id/edit',
+                path: '/accounting/budgets/:id/edit',
                 name: 'BudgetEdit',
                 component: BudgetForm,
                 meta: {
@@ -1959,7 +1958,7 @@ const routes = [
                 }
             },
             {
-                path: '/budgets/:id',
+                path: '/accounting/budgets/:id',
                 name: 'BudgetDetail',
                 component: BudgetDetail,
                 meta: {
@@ -1973,7 +1972,7 @@ const routes = [
                 }
             },
             {
-                path: '/budgets/analysis/vs-actual',
+                path: '/accounting/budgets/analysis/vs-actual',
                 name: 'BudgetVsActual',
                 component: BudgetVsActual,
                 meta: {
@@ -1987,7 +1986,7 @@ const routes = [
                 }
             },
             {
-                path: '/budgets/analysis/variance',
+                path: '/accounting/budgets/analysis/variance',
                 name: 'VarianceAnalysis',
                 component: VarianceAnalysis,
                 meta: {

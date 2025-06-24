@@ -802,7 +802,7 @@ export default {
       // Group by journal_number to validate entries
       const entriesMap = new Map()
       
-      this.uploadedData.forEach((row, index) => {
+      this.uploadedData.forEach((row) => {
         row.errors = []
         row.warnings = []
         row.isValid = true
@@ -873,7 +873,7 @@ export default {
       })
       
       // Validate journal entry balance
-      entriesMap.forEach((lines, journalNumber) => {
+      entriesMap.forEach((lines) => {
         const totalDebits = lines.reduce((sum, line) => sum + (parseFloat(line.debit_amount) || 0), 0)
         const totalCredits = lines.reduce((sum, line) => sum + (parseFloat(line.credit_amount) || 0), 0)
         

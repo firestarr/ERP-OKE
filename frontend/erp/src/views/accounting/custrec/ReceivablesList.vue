@@ -293,7 +293,7 @@ export default {
           ...this.filters
         }
         
-        const response = await axios.get('/api/accounting/customer-receivables', { params })
+        const response = await axios.get('/accounting/customer-receivables', { params })
         this.receivables = response.data.data
         this.pagination = {
           current_page: response.data.current_page,
@@ -315,7 +315,7 @@ export default {
     
     async loadCustomers() {
       try {
-        const response = await axios.get('/api/customers')
+        const response = await axios.get('/customers')
         this.customers = response.data.data || response.data
       } catch (error) {
         console.error('Error loading customers:', error)
@@ -389,7 +389,7 @@ export default {
       if (!confirm('Are you sure you want to delete this receivable?')) return
       
       try {
-        await axios.delete(`/api/accounting/customer-receivables/${id}`)
+        await axios.delete(`/accounting/customer-receivables/${id}`)
         this.$toast?.success('Receivable deleted successfully')
         this.loadReceivables()
       } catch (error) {

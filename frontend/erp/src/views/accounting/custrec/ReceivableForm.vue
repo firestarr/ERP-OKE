@@ -342,7 +342,7 @@ export default {
   methods: {
     async loadCustomers() {
       try {
-        const response = await axios.get('/api/customers')
+        const response = await axios.get('/customers')
         this.customers = response.data.data || response.data
       } catch (error) {
         console.error('Error loading customers:', error)
@@ -353,7 +353,7 @@ export default {
     async loadReceivable() {
       try {
         this.loading = true
-        const response = await axios.get(`/api/accounting/customer-receivables/${this.id}`)
+        const response = await axios.get(`/accounting/customer-receivables/${this.id}`)
         const receivable = response.data.data
         
         this.form = {
@@ -393,7 +393,7 @@ export default {
       
       // Load available invoices for this customer
       try {
-        const response = await axios.get(`/api/customers/${this.form.customer_id}/invoices`, {
+        const response = await axios.get(`/customers/${this.form.customer_id}/invoices`, {
           params: { status: 'Unpaid' }
         })
         this.availableInvoices = response.data.data || response.data
@@ -417,7 +417,7 @@ export default {
       
       // Get invoice details
       try {
-        const response = await axios.get(`/api/sales/invoices/${this.form.invoice_id}`)
+        const response = await axios.get(`/invoices/${this.form.invoice_id}`)
         this.selectedInvoice = response.data.data
         
         // Auto-fill amount and due date if not in edit mode
@@ -443,9 +443,9 @@ export default {
         
         let response
         if (this.isEdit) {
-          response = await axios.put(`/api/accounting/customer-receivables/${this.id}`, formData)
+          response = await axios.put(`/accounting/customer-receivables/${this.id}`, formData)
         } else {
-          response = await axios.post('/api/accounting/customer-receivables', formData)
+          response = await axios.post('/accounting/customer-receivables', formData)
         }
         
         this.$toast?.success(response.data.message || `Receivable ${this.isEdit ? 'updated' : 'created'} successfully`)
@@ -472,7 +472,7 @@ export default {
     
     async sendPaymentReminder(receivableId) {
       try {
-        await axios.post(`/api/accounting/customer-receivables/${receivableId}/send-reminder`)
+        await axios.post(`/accounting/customer-receivables/${receivableId}/send-reminder`)
         this.$toast?.success('Payment reminder sent to customer')
       } catch (error) {
         console.error('Error sending reminder:', error)

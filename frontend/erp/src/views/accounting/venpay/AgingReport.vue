@@ -244,20 +244,20 @@
                   <div class="payable-count">{{ group.payables.length }} payable(s)</div>
                 </td>
                 <td class="aging-amount current">
-                  <span class="amount">{{ formatCurrency(group.current) }}</span>
-                  <div class="percentage">{{ getPercentage(group.current, group.total) }}%</div>
+                  <span class="amount">{{ formatCurrency(group.days_1_30) }}</span>
+                  <div class="percentage">{{ getPercentage(group.days_1_30, group.total_balance) }}%</div>
                 </td>
                 <td class="aging-amount aging-30">
-                  <span class="amount">{{ formatCurrency(group.aging_30_60) }}</span>
-                  <div class="percentage">{{ getPercentage(group.aging_30_60, group.total) }}%</div>
+                  <span class="amount">{{ formatCurrency(group.days_31_60) }}</span>
+                  <div class="percentage">{{ getPercentage(group.days_31_60, group.total_balance) }}%</div>
                 </td>
                 <td class="aging-amount aging-60">
-                  <span class="amount">{{ formatCurrency(group.aging_60_90) }}</span>
-                  <div class="percentage">{{ getPercentage(group.aging_60_90, group.total) }}%</div>
+                  <span class="amount">{{ formatCurrency(group.days_61_90) }}</span>
+                  <div class="percentage">{{ getPercentage(group.days_61_90, group.total_balance) }}%</div>
                 </td>
                 <td class="aging-amount overdue">
-                  <span class="amount">{{ formatCurrency(group.over_90) }}</span>
-                  <div class="percentage">{{ getPercentage(group.over_90, group.total) }}%</div>
+                  <span class="amount">{{ formatCurrency(group.days_over_90) }}</span>
+                  <div class="percentage">{{ getPercentage(group.days_over_90, group.total_balance) }}%</div>
                 </td>
                 <td class="actions">
                   <button @click.stop="viewVendorStatement(group.vendor_id)" class="btn-action">
@@ -565,7 +565,7 @@ export default {
       }
     },
     
-    async loadAgingData() {
+async loadAgingData() {
       this.loading = true
       try {
         const params = {
@@ -576,7 +576,14 @@ export default {
         
         const response = await axios.get('/accounting/vendor-payables/aging', { params })
         
-        this.agingData = response.data.data || []
+        // Normalize agingData to ensure payables is always an array
+        const data = response.data.data || []
+        data.forEach(group => {
+          if (!Array.isArray(group.payables)) {
+            group.payables = []
+          }
+        })
+        this.agingData = data
         this.summary = response.data.summary || this.summary
         
         this.pagination = {

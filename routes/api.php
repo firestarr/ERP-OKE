@@ -72,6 +72,7 @@ use App\Http\Controllers\Api\Accounting\BudgetController;
 use App\Http\Controllers\Api\Accounting\BankAccountController;
 use App\Http\Controllers\Api\Accounting\BankReconciliationController;
 use App\Http\Controllers\Api\Accounting\FinancialReportController;
+use App\Http\Controllers\Api\Accounting\BankTransactionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -652,6 +653,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Customer Receivables
         Route::get('customer-receivables/aging', [CustomerReceivableController::class, 'aging']);
         Route::apiResource('customer-receivables', CustomerReceivableController::class);
+        Route::get('receivables/{id}/statement', [CustomerReceivableController::class, 'statement']);
+        Route::get('customer-transactions', [CustomerReceivableController::class, 'customerTransactions']);
 
         // Receivable Payments
         Route::apiResource('receivable-payments', ReceivablePaymentController::class);
@@ -680,6 +683,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Bank Accounts
         Route::apiResource('bank-accounts', BankAccountController::class);
+        Route::apiResource('bank-transactions', BankTransactionController::class);
 
         // Bank Reconciliations
         Route::post('bank-reconciliations/{id}/finalize', [BankReconciliationController::class, 'finalize']);
@@ -691,8 +695,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('bank-reconciliations/{id}/lines/{lineId}', [BankReconciliationController::class, 'updateLine']);
         Route::delete('bank-reconciliations/{id}/lines/{lineId}', [BankReconciliationController::class, 'destroyLine']);
 
-        // Bank Transactions
-        Route::apiResource('bank-transactions', BankTransactionController::class);
 
         // Financial Reports
         Route::prefix('reports')->group(function () {

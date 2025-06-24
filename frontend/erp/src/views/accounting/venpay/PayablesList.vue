@@ -421,48 +421,52 @@ export default {
     this.loadInvoices()
   },
   methods: {
-    async loadData() {
-      this.loading = true
-      try {
-        const params = {
-          page: this.pagination.current_page,
-          per_page: this.pagination.per_page,
-          ...this.filters
-        }
-        
-        if (this.searchQuery) {
-          params.search = this.searchQuery
-        }
-        
-        const response = await axios.get('/accounting/vendor-payables', { params })
-        
-        this.payables = response.data.data
-        this.pagination = {
-          current_page: response.data.current_page,
-          last_page: response.data.last_page,
-          per_page: response.data.per_page,
-          total: response.data.total,
-          from: response.data.from,
-          to: response.data.to
-        }
-        
-        this.calculateSummary()
-      } catch (error) {
-        console.error('Error loading payables:', error)
-        this.$toast?.error('Failed to load payables')
-      } finally {
-        this.loading = false
-      }
-    },
+async loadData() {
+  this.loading = true
+  try {
+    const params = {
+      page: this.pagination.current_page,
+      per_page: this.pagination.per_page,
+      ...this.filters
+    }
     
-    async loadVendors() {
-      try {
-        const response = await axios.get('/vendors')
-        this.vendors = response.data.data || response.data
-      } catch (error) {
-        console.error('Error loading vendors:', error)
-      }
-    },
+    if (this.searchQuery) {
+      params.search = this.searchQuery
+    }
+    
+    
+    const response = await axios.get('/accounting/vendor-payables', { params })
+    
+    this.payables = response.data.data
+    this.pagination = {
+      current_page: response.data.current_page,
+      last_page: response.data.last_page,
+      per_page: response.data.per_page,
+      total: response.data.total,
+      from: response.data.from,
+      to: response.data.to
+    }
+    
+    this.calculateSummary()
+  } catch (error) {
+    console.error('Error loading payables:', error)
+    this.$toast?.error('Failed to load payables')
+  } finally {
+    this.loading = false
+  }
+},
+    
+async loadVendors() {
+  try {
+    const response = await axios.get('/vendors')
+    this.vendors = Array.isArray(response.data.data) ? response.data.data : (Array.isArray(response.data) ? response.data : [])
+    this.$toast?.success('Vendors loaded successfully')
+  } catch (error) {
+    console.error('Error loading vendors:', error)
+    this.$toast?.error('Failed to load vendors')
+    this.vendors = []
+  }
+},
     
     async loadInvoices() {
       try {
@@ -482,21 +486,25 @@ export default {
       }
     },
     
-    applyFilters() {
-      this.pagination.current_page = 1
-      this.loadData()
-    },
+applyFilters() {
+  clearTimeout(this.filterTimeout)
+  this.filterTimeout = setTimeout(() => {
+    this.pagination.current_page = 1
+    this.loadData()
+  }, 300)
+},
     
-    clearFilters() {
-      this.filters = {
-        vendor_id: '',
-        status: '',
-        from_date: '',
-        to_date: ''
-      }
-      this.searchQuery = ''
-      this.applyFilters()
-    },
+clearFilters() {
+  this.filters = {
+    vendor_id: '',
+    status: '',
+    from_date: '',
+    to_date: ''
+  }
+  this.searchQuery = ''
+  this.pagination.current_page = 1
+  this.loadData()
+},
     
     debounceSearch() {
       clearTimeout(this.searchTimeout)

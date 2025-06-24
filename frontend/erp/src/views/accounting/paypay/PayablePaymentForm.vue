@@ -49,12 +49,18 @@
                             <div class="form-group">
                                 <label class="form-label required">Vendor</label>
                                 <div class="vendor-selector">
-                                    <select v-model="form.vendor_id" @change="loadPayables" class="form-select" :disabled="isEdit">
-                                        <option value="">Select Vendor</option>
-                                        <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                                            {{ vendor.name }}
-                                        </option>
-                                    </select>
+<select v-model="form.vendor_id" @change="loadPayables" class="form-select" :disabled="isEdit">
+    <option value="">Select Vendor</option>
+    <template v-if="vendors && vendors.length">
+        <option 
+            v-for="vendor in vendors" 
+            :key="vendor.id" 
+            :value="vendor.id"
+        >
+            {{ vendor.name }}
+        </option>
+    </template>
+</select>
                                     <button type="button" @click="showVendorModal = true" class="vendor-add-btn">
                                         <i class="fas fa-plus"></i>
                                     </button>
@@ -396,8 +402,8 @@ export default {
         async loadInitialData() {
             try {
                 const [vendorsRes, accountsRes] = await Promise.all([
-                    axios.get('/api/vendors'),
-                    axios.get('/api/accounting/chart-of-accounts')
+                    axios.get('/vendors'),
+                    axios.get('/accounting/chart-of-accounts')
                 ])
                 
                 this.vendors = vendorsRes.data.data || vendorsRes.data
@@ -414,7 +420,7 @@ export default {
 
         async loadPayment() {
             try {
-                const response = await axios.get(`/api/accounting/payable-payments/${this.paymentId}`)
+                const response = await axios.get(`/accounting/payable-payments/${this.paymentId}`)
                 const payment = response.data.data
                 
                 this.form = {
@@ -449,7 +455,7 @@ export default {
 
             this.loadingPayables = true
             try {
-                const response = await axios.get('/api/accounting/vendor-payables', {
+                const response = await axios.get('/accounting/vendor-payables', {
                     params: {
                         vendor_id: this.form.vendor_id,
                         status: 'Open'
@@ -485,7 +491,7 @@ export default {
             }
 
             try {
-                const response = await axios.get(`/api/accounting/exchange-rates/${this.form.payment_currency}`, {
+                const response = await axios.get(`/accounting/exchange-rates/${this.form.payment_currency}`, {
                     params: { date: this.form.payment_date }
                 })
                 this.form.exchange_rate = response.data.rate
@@ -507,7 +513,7 @@ export default {
 
         async createVendor() {
             try {
-                const response = await axios.post('/api/vendors', this.newVendor)
+                const response = await axios.post('/vendors', this.newVendor)
                 this.vendors.push(response.data.data)
                 this.form.vendor_id = response.data.data.id
                 this.newVendor = { name: '', email: '' }
@@ -532,11 +538,11 @@ export default {
             try {
                 const payload = { ...this.form }
                 
-                let response
+                // let response
                 if (this.isEdit) {
-                    response = await axios.put(`/api/accounting/payable-payments/${this.paymentId}`, payload)
+                    await axios.put(`/accounting/payable-payments/${this.paymentId}`, payload)
                 } else {
-                    response = await axios.post('/api/accounting/payable-payments', payload)
+                    await axios.post('/accounting/payable-payments', payload)
                 }
 
                 this.$toast.success(this.isEdit ? 'Payment updated successfully' : 'Payment recorded successfully')

@@ -421,13 +421,14 @@ import axios from 'axios'
 export default {
   name: 'CustomerStatement',
   props: {
-    customerId: {
+    receivableId: {
       type: [String, Number],
       required: true
     }
   },
   data() {
     return {
+      customerId: null,
       loading: true,
       customer: null,
       transactions: [],
@@ -478,8 +479,11 @@ export default {
   },
   async mounted() {
     this.initializeDateRange()
-    await this.loadCustomer()
-    await this.loadStatementData()
+    await this.loadReceivable()
+    if (this.customerId) {
+      await this.loadCustomer()
+      await this.loadStatementData()
+    }
   },
   methods: {
     initializeDateRange() {
@@ -491,9 +495,20 @@ export default {
       this.dateRange.to = today.toISOString().split('T')[0]
     },
     
+    async loadReceivable() {
+      try {
+        const response = await axios.get(`/accounting/customer-receivables/${this.receivableId}`)
+        const receivable = response.data.data || response.data
+        this.customerId = receivable.customer_id
+      } catch (error) {
+        console.error('Error loading receivable:', error)
+        this.$toast?.error('Failed to load receivable information')
+      }
+    },
+    
     async loadCustomer() {
       try {
-        const response = await axios.get(`/api/customers/${this.customerId}`)
+        const response = await axios.get(`/customers/${this.customerId}`)
         this.customer = response.data.data || response.data
         
         // Set default email
@@ -539,7 +554,7 @@ export default {
           include_paid: this.includePaid
         }
         
-        const response = await axios.get('/api/accounting/customer-transactions', { params })
+        const response = await axios.get('/accounting/customer-transactions', { params })
         this.transactions = response.data.data || []
         
         // Calculate running balance
@@ -566,7 +581,7 @@ export default {
           status: this.includePaid ? '' : 'Outstanding,Overdue,Partial'
         }
         
-        const response = await axios.get('/api/accounting/customer-receivables', { params })
+        const response = await axios.get('/accounting/customer-receivables', { params })
         this.outstandingInvoices = response.data.data || []
       } catch (error) {
         console.error('Error loading outstanding invoices:', error)
@@ -583,7 +598,7 @@ export default {
           limit: 10
         }
         
-        const response = await axios.get('/api/accounting/receivable-payments', { params })
+        const response = await axios.get('/accounting/receivable-payments', { params })
         this.recentPayments = response.data.data || []
       } catch (error) {
         console.error('Error loading recent payments:', error)
@@ -600,7 +615,7 @@ export default {
           as_of_date: this.dateRange.to
         }
         
-        const response = await axios.get('/api/accounting/customer-receivables/aging', { params })
+        const response = await axios.get('/accounting/customer-receivables/aging', { params })
         const agingData = response.data.data || []
         
         if (agingData.length > 0) {
@@ -647,7 +662,7 @@ export default {
           include_paid: this.includePaid
         }
         
-        await axios.post('/api/accounting/customer-receivables/email-statement', emailData)
+        await axios.post('/accounting/customer-receivables/email-statement', emailData)
         
         this.$toast?.success('Statement emailed successfully')
         this.closeEmailModal()
@@ -674,7 +689,7 @@ export default {
           include_paid: this.includePaid
         }
         
-        const response = await axios.get('/api/accounting/customer-receivables/statement-pdf', {
+        const response = await axios.get('/accounting/customer-receivables/statement-pdf', {
           params,
           responseType: 'blob'
         })

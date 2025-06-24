@@ -736,25 +736,31 @@ export default {
       quickFilter.value = period
       
       switch (period) {
-        case 'today':
+        case 'today': {
           filters.value.dateFrom = today.toISOString().split('T')[0]
           filters.value.dateTo = today.toISOString().split('T')[0]
           break
-        case 'week':
+        }
+        case 'week': {
           const weekStart = new Date(today)
           weekStart.setDate(today.getDate() - today.getDay())
           filters.value.dateFrom = weekStart.toISOString().split('T')[0]
           filters.value.dateTo = today.toISOString().split('T')[0]
           break
-        case 'month':
+        }
+        case 'month': {
           const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
           filters.value.dateFrom = monthStart.toISOString().split('T')[0]
           filters.value.dateTo = today.toISOString().split('T')[0]
           break
-        case 'quarter':
+        }
+        case 'quarter': {
           const quarterStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1)
           filters.value.dateFrom = quarterStart.toISOString().split('T')[0]
           filters.value.dateTo = today.toISOString().split('T')[0]
+          break
+        }
+        default:
           break
       }
       
@@ -790,7 +796,7 @@ export default {
       })
     }
 
-    const deleteTransaction = (transaction) => {
+    const deleteTransaction = () => {
       // Implement delete functionality
       showNotification('Delete functionality coming soon', 'info')
     }

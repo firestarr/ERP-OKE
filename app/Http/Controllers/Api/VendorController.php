@@ -19,8 +19,7 @@ class VendorController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        $perPage = $request->input('per_page', 100);
-        $vendors = $query->paginate($perPage);
+        $vendors = $query->get();
 
         return response()->json(['data' => $vendors], 200);
     }

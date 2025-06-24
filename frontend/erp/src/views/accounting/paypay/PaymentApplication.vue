@@ -581,8 +581,8 @@ export default {
         async loadInitialData() {
             try {
                 const [vendorsRes, accountsRes] = await Promise.all([
-                    axios.get('/api/vendors'),
-                    axios.get('/api/accounting/chart-of-accounts')
+                    axios.get('/vendors'),
+                    axios.get('/accounting/chart-of-accounts')
                 ])
                 
                 this.vendors = vendorsRes.data.data || vendorsRes.data
@@ -609,7 +609,7 @@ export default {
         async loadVendorStats() {
             try {
                 for (const vendor of this.vendors) {
-                    const response = await axios.get('/api/accounting/vendor-payables', {
+                    const response = await axios.get('/accounting/vendor-payables', {
                         params: { vendor_id: vendor.id, status: 'Open' }
                     })
                     const payables = response.data.data || response.data
@@ -630,7 +630,7 @@ export default {
             if (!this.selectedVendor) return
             
             try {
-                const response = await axios.get('/api/accounting/vendor-payables', {
+                const response = await axios.get('/accounting/vendor-payables', {
                     params: {
                         vendor_id: this.selectedVendor.id,
                         status: 'Open'
@@ -742,7 +742,7 @@ export default {
 
                 // Create payment applications
                 const applications = Object.entries(this.allocations)
-                    .filter(([_, amount]) => amount > 0)
+                    .filter(([amount]) => amount > 0)
                     .map(([payableId, amount]) => ({
                         payable_id: payableId,
                         amount: amount,
@@ -750,7 +750,7 @@ export default {
                     }))
 
                 const promises = applications.map(application => 
-                    axios.post('/api/accounting/payable-payments', application)
+                    axios.post('/accounting/payable-payments', application)
                 )
 
                 await Promise.all(promises)

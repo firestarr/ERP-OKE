@@ -181,7 +181,7 @@
               </h3>
               <div class="card-actions">
                 <router-link 
-                  :to="`/sales/invoices/${receivable.invoice_id}`"
+                  :to="`/invoices/${receivable.invoice_id}`"
                   class="btn btn-sm btn-ghost"
                 >
                   <i class="fas fa-external-link-alt"></i>
@@ -452,7 +452,11 @@ export default {
   props: {
     id: {
       type: [String, Number],
-      required: true
+      required: true,
+      validator(value) {
+        // Validate that id is a number or numeric string
+        return !isNaN(Number(value));
+      }
     }
   },
   data() {
@@ -479,7 +483,7 @@ export default {
     async loadReceivable() {
       try {
         this.loading = true
-        const response = await axios.get(`/api/accounting/customer-receivables/${this.id}`)
+        const response = await axios.get(`/accounting/customer-receivables/${this.id}`)
         this.receivable = response.data.data
       } catch (error) {
         console.error('Error loading receivable:', error)
@@ -491,7 +495,7 @@ export default {
     
     async loadPayments() {
       try {
-        const response = await axios.get(`/api/accounting/receivable-payments`, {
+        const response = await axios.get(`/accounting/receivable-payments`, {
           params: { receivable_id: this.id }
         })
         this.payments = response.data.data || response.data
@@ -512,7 +516,7 @@ export default {
           ...this.paymentForm
         }
         
-        await axios.post('/api/accounting/receivable-payments', paymentData)
+        await axios.post('/accounting/receivable-payments', paymentData)
         
         this.$toast?.success('Payment added successfully')
         this.closeAddPaymentModal()
@@ -540,7 +544,7 @@ export default {
     
     async sendReminder() {
       try {
-        await axios.post(`/api/accounting/customer-receivables/${this.id}/send-reminder`)
+        await axios.post(`/accounting/customer-receivables/${this.id}/send-reminder`)
         this.$toast?.success('Payment reminder sent successfully')
       } catch (error) {
         console.error('Error sending reminder:', error)
@@ -554,7 +558,7 @@ export default {
     
     async downloadPDF() {
       try {
-        const response = await axios.get(`/api/accounting/customer-receivables/${this.id}/pdf`, {
+        const response = await axios.get(`/accounting/customer-receivables/${this.id}/pdf`, {
           responseType: 'blob'
         })
         

@@ -73,7 +73,7 @@ class VendorPayable extends Model
      */
     public function vendor(): BelongsTo
     {
-        return $this->belongsTo(Vendor::class, 'vendor_id');
+        return $this->belongsTo(\App\Models\Vendor::class, 'vendor_id');
     }
 
     /**
@@ -81,7 +81,7 @@ class VendorPayable extends Model
      */
     public function vendorInvoice(): BelongsTo
     {
-        return $this->belongsTo(VendorInvoice::class, 'invoice_id');
+        return $this->belongsTo(\App\Models\VendorInvoice::class, 'invoice_id');
     }
 
     /**
@@ -89,7 +89,7 @@ class VendorPayable extends Model
      */
     public function payablePayments(): HasMany
     {
-        return $this->hasMany(PayablePayment::class, 'payable_id');
+        return $this->hasMany(\App\Models\PayablePayment::class, 'payable_id');
     }
     
     /**

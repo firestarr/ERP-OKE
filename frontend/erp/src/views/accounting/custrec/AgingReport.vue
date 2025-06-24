@@ -463,7 +463,7 @@ export default {
   methods: {
     async loadCustomers() {
       try {
-        const response = await axios.get('/api/customers')
+        const response = await axios.get('/customers')
         this.customers = response.data.data || response.data
       } catch (error) {
         console.error('Error loading customers:', error)
@@ -478,7 +478,7 @@ export default {
           as_of_date: this.reportDate
         }
         
-        const response = await axios.get('/api/accounting/customer-receivables/aging', { params })
+        const response = await axios.get('/accounting/customer-receivables/aging', { params })
         this.agingData = response.data.data || response.data
         
         this.calculateSummary()
@@ -598,7 +598,7 @@ export default {
     
     async sendReminder(customerId) {
       try {
-        await axios.post(`/api/customers/${customerId}/send-payment-reminder`)
+        await axios.post(`/customers/${customerId}/send-payment-reminder`)
         this.$toast?.success('Payment reminder sent successfully')
       } catch (error) {
         console.error('Error sending reminder:', error)

@@ -699,7 +699,7 @@ export default {
       return commonWords.length / Math.max(words1.length, words2.length)
     },
 
-    getMatchReason(stmt, book, score) {
+    getMatchReason(stmt, book) {
       const reasons = []
       
       if (Math.abs(stmt.amount - book.amount) <= this.amountTolerance) {

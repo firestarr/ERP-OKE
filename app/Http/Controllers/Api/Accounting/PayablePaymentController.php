@@ -36,7 +36,7 @@ class PayablePaymentController extends Controller
 
         // Filter by currency
         if ($request->has('currency')) {
-            $query->where('currency', $request->currency);
+            $query->where('payment_currency', $request->currency);
         }
         
         $payments = $query->orderBy('payment_date', 'desc')
@@ -57,14 +57,14 @@ class PayablePaymentController extends Controller
             'payable_id' => 'required|exists:VendorPayable,payable_id',
             'payment_date' => 'required|date',
             'amount' => 'required|numeric|min:0.01',
-            'currency' => 'required|string|size:3',
-            'exchange_rate' => 'required_if:currency,!=,USD|numeric|min:0',
+            'payment_currency' => 'required|string|size:3',
+            'exchange_rate' => 'required_if:payment_currency,!=,USD|numeric|min:0',
             'payment_method' => 'required|string|max:50',
             'reference_number' => 'required|string|max:50',
             'create_journal_entry' => 'boolean',
             'cash_account_id' => 'required_if:create_journal_entry,true|exists:ChartOfAccount,account_id',
             'payable_account_id' => 'required_if:create_journal_entry,true|exists:ChartOfAccount,account_id',
-            'exchange_gain_loss_account_id' => 'required_if:currency,!=,USD|exists:ChartOfAccount,account_id'
+            'exchange_gain_loss_account_id' => 'required_if:payment_currency,!=,USD|exists:ChartOfAccount,account_id'
         ]);
 
         if ($validator->fails()) {
@@ -87,11 +87,11 @@ class PayablePaymentController extends Controller
             // Get exchange rate (if not provided and not in base currency)
             $exchangeRate = $request->exchange_rate;
             $baseCurrency = config('app.base_currency', 'USD');
-            $payableCurrency = $payable->currency ?? $baseCurrency;
+            $payableCurrency = $payable->payment_currency ?? $baseCurrency;
             
-            if (!$exchangeRate && $request->currency !== $baseCurrency) {
+            if (!$exchangeRate && $request->payment_currency !== $baseCurrency) {
                 // Try to get from ExchangeRate model
-                $rateRecord = ExchangeRate::where('from_currency', $request->currency)
+                $rateRecord = ExchangeRate::where('from_currency', $request->payment_currency)
                     ->where('to_currency', $baseCurrency)
                     ->where('rate_date', '<=', $request->payment_date)
                     ->orderBy('rate_date', 'desc')
@@ -107,19 +107,19 @@ class PayablePaymentController extends Controller
             }
             
             // If currency is the same as base, rate is 1
-            if ($request->currency === $baseCurrency) {
+            if ($request->payment_currency === $baseCurrency) {
                 $exchangeRate = 1;
             }
             
             // Calculate base currency amount
             $baseCurrencyAmount = $request->amount;
-            if ($request->currency !== $baseCurrency) {
+            if ($request->payment_currency !== $baseCurrency) {
                 $baseCurrencyAmount = $request->amount * $exchangeRate;
             }
             
             // Calculate exchange rate difference if the payment currency is different from payable currency
             $exchangeGainLoss = 0;
-            if ($request->currency !== $payableCurrency) {
+            if ($request->payment_currency !== $payableCurrency) {
                 // Convert payment to payable currency
                 $payableCurrencyAmount = $baseCurrencyAmount;
                 
@@ -163,7 +163,7 @@ class PayablePaymentController extends Controller
                 'payable_id' => $request->payable_id,
                 'payment_date' => $request->payment_date,
                 'amount' => $request->amount,
-                'currency' => $request->currency,
+                'payment_currency' => $request->payment_currency,
                 'exchange_rate' => $exchangeRate,
                 'base_currency_amount' => $baseCurrencyAmount,
                 'payment_method' => $request->payment_method,
@@ -189,7 +189,7 @@ class PayablePaymentController extends Controller
                 }
                 
                 // For foreign currency, exchange gain/loss account is required
-                if ($request->currency !== $baseCurrency && !$request->has('exchange_gain_loss_account_id')) {
+                if ($request->payment_currency !== $baseCurrency && !$request->has('exchange_gain_loss_account_id')) {
                     throw new \Exception('Exchange gain/loss account ID is required for foreign currency payments');
                 }
                 
@@ -223,8 +223,8 @@ class PayablePaymentController extends Controller
                     'debit_amount' => 0,
                     'credit_amount' => $baseCurrencyAmount,
                     'description' => 'Payment to ' . $payable->vendor->name,
-                    'currency' => $request->currency,
-                    'foreign_amount' => $request->currency !== $baseCurrency ? $request->amount : null
+                    'currency' => $request->payment_currency,
+                    'foreign_amount' => $request->payment_currency !== $baseCurrency ? $request->amount : null
                 ]);
                 
                 // Record exchange gain/loss if applicable

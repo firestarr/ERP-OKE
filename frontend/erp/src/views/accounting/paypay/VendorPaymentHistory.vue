@@ -611,7 +611,7 @@ export default {
     methods: {
         async loadInitialData() {
             try {
-                const response = await axios.get('/api/vendors')
+                const response = await axios.get('/vendors')
                 this.vendors = response.data.data || response.data
             } catch (error) {
                 console.error('Error loading vendors:', error)
@@ -627,7 +627,7 @@ export default {
                     ...this.filters
                 }
                 
-                const response = await axios.get('/api/accounting/payable-payments', { params })
+                const response = await axios.get('/accounting/payable-payments', { params })
                 this.payments = response.data.data || response.data
                 this.pagination = {
                     current_page: 1,
@@ -842,7 +842,7 @@ export default {
             this.showDetailsModal = true
         },
 
-        async downloadReceipt(payment) {
+        async downloadReceipt() {
             try {
                 // Mock download - implement actual download logic
                 this.$toast.success('Receipt downloaded successfully')

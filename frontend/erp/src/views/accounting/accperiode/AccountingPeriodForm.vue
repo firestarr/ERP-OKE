@@ -517,6 +517,7 @@ export default {
       
       const duration = this.periodDuration
       
+      // Duration validation
       if (duration > 365) {
         this.dateWarnings.push({
           type: 'warning',
@@ -535,14 +536,110 @@ export default {
       
       const start = new Date(this.formData.start_date)
       const end = new Date(this.formData.end_date)
+      const now = new Date()
       
-      if (end > new Date()) {
+      // 1. Check if start date is too far in the past (more than 10 years)
+      const oldThreshold = new Date()
+      oldThreshold.setFullYear(oldThreshold.getFullYear() - 10)
+      if (start < oldThreshold) {
+        this.dateWarnings.push({
+          type: 'warning',
+          icon: 'fas fa-history',
+          title: 'Very Old Period',
+          message: 'Start date is more than 10 years ago. Please verify this is correct.'
+        })
+      }
+      
+      // 2. Check if start date is in the future
+      if (start > now) {
+        this.dateWarnings.push({
+          type: 'info',
+          icon: 'fas fa-rocket',
+          title: 'Future Start Date',
+          message: 'This period starts in the future.'
+        })
+      }
+      
+      // 3. Check if period extends into future (different message based on start date)
+      if (start <= now && end > now) {
+        this.dateWarnings.push({
+          type: 'info',
+          icon: 'fas fa-calendar-plus',
+          title: 'Ongoing Period',
+          message: 'This period is currently active and extends into the future.'
+        })
+      } else if (start > now && end > now) {
         this.dateWarnings.push({
           type: 'info',
           icon: 'fas fa-calendar-plus',
           title: 'Future Period',
-          message: 'This period extends into the future.'
+          message: 'This entire period is scheduled for the future.'
         })
+      }
+      
+      // 4. Check if start date is on weekend (business rule)
+      const startDay = start.getDay()
+      if (startDay === 0 || startDay === 6) {
+        this.dateWarnings.push({
+          type: 'info',
+          icon: 'fas fa-calendar-week',
+          title: 'Weekend Start',
+          message: 'Period starts on weekend. Consider starting on a weekday for better business alignment.'
+        })
+      }
+      
+      // 5. Check if start date is not the 1st of month (for monthly periods)
+      if (start.getDate() !== 1 && duration >= 28 && duration <= 31) {
+        this.dateWarnings.push({
+          type: 'info',
+          icon: 'fas fa-calendar-day',
+          title: 'Mid-Month Start',
+          message: 'Monthly period doesn\'t start on the 1st. This may affect reporting consistency.'
+        })
+      }
+      
+      // 6. Check if it's a fiscal year but doesn't start in standard months
+      if (duration >= 360 && duration <= 370) {
+        const startMonth = start.getMonth()
+        // Common fiscal year starts: January (0), April (3), July (6), October (9)
+        const standardFiscalMonths = [0, 3, 6, 9]
+        if (!standardFiscalMonths.includes(startMonth)) {
+          this.dateWarnings.push({
+            type: 'info',
+            icon: 'fas fa-chart-line',
+            title: 'Non-Standard Fiscal Year',
+            message: 'Annual period doesn\'t start in a standard fiscal month (Jan, Apr, Jul, Oct).'
+          })
+        }
+      }
+      
+      // 7. Check for quarter periods with non-standard start dates
+      if (duration >= 85 && duration <= 95) {
+        const startMonth = start.getMonth()
+        const standardQuarterMonths = [0, 3, 6, 9] // Jan, Apr, Jul, Oct
+        if (!standardQuarterMonths.includes(startMonth)) {
+          this.dateWarnings.push({
+            type: 'info',
+            icon: 'fas fa-chart-pie',
+            title: 'Non-Standard Quarter',
+            message: 'Quarterly period doesn\'t align with standard quarters (Q1: Jan-Mar, Q2: Apr-Jun, etc.).'
+          })
+        }
+      }
+      
+      // 8. Check if end date is not the last day of month (for monthly periods)
+      if (duration >= 28 && duration <= 31) {
+        const endMonth = end.getMonth()
+        const endYear = end.getFullYear()
+        const lastDayOfMonth = new Date(endYear, endMonth + 1, 0).getDate()
+        if (end.getDate() !== lastDayOfMonth) {
+          this.dateWarnings.push({
+            type: 'info',
+            icon: 'fas fa-calendar-times',
+            title: 'Partial Month End',
+            message: 'Monthly period doesn\'t end on the last day of the month.'
+          })
+        }
       }
     },
     

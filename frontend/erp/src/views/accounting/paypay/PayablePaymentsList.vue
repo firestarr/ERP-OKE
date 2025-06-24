@@ -285,7 +285,7 @@ export default {
                     ...this.filters
                 }
                 
-                const response = await axios.get('/api/accounting/payable-payments', { params })
+                const response = await axios.get('/accounting/payable-payments', { params })
                 this.payments = response.data.data
                 this.pagination = {
                     current_page: response.data.current_page,
@@ -375,7 +375,7 @@ export default {
             
             this.deleting = true
             try {
-                await axios.delete(`/api/accounting/payable-payments/${this.paymentToDelete.payment_id}`)
+                await axios.delete(`/accounting/payable-payments/${this.paymentToDelete.payment_id}`)
                 this.$toast.success('Payment deleted successfully')
                 this.showDeleteModal = false
                 this.paymentToDelete = null

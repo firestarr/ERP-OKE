@@ -527,7 +527,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
@@ -839,7 +839,7 @@ export default {
           }
         })
         
-        const response = await axios.post('/accounting/payment-applications', {
+        await axios.post('/accounting/payment-applications', {
           customer_id: selectedCustomerId.value,
           applications
         })
@@ -2036,3 +2036,4 @@ export default {
     gap: 0.5rem;
   }
 }
+</style>

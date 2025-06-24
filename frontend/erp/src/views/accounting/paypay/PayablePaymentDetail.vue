@@ -368,7 +368,7 @@ export default {
         async loadPayment() {
             this.loading = true
             try {
-                const response = await axios.get(`/api/accounting/payable-payments/${this.paymentId}`)
+                const response = await axios.get(`/accounting/payable-payments/${this.paymentId}`)
                 this.payment = response.data.data
             } catch (error) {
                 console.error('Error loading payment:', error)
@@ -383,7 +383,7 @@ export default {
             
             this.loadingJournal = true
             try {
-                const response = await axios.get('/api/accounting/journal-entries', {
+                const response = await axios.get('/accounting/journal-entries', {
                     params: {
                         reference_type: 'PayablePayment',
                         reference_id: this.payment.payment_id
