@@ -251,79 +251,146 @@ class AIExcelForecastController extends Controller
             $debugInfo['no_forecast_rows'] = 0;
             $debugInfo['total_loops'] = 0;
 
-            for ($i = $headerRowIndex + 1; $i < count($data); $i++) {
-                $debugInfo['total_loops']++;
-                $row = $data[$i];
+            $totalRows = count($data);
+for ($i = $headerRowIndex + 1; $i < $totalRows; $i++) {
+    Log::info("Processing index {$i} of total " . $totalRows . " rows");
+    $debugInfo['total_loops']++;
+    $row = $data[$i];
 
-                if (!is_array($row)) {
-                    $debugInfo['loop_details'][] = "Row {$i}: Not array, skipped";
-                    continue;
-                }
+    if (!is_array($row)) {
+        $debugInfo['loop_details'][] = "Row {$i}: Not array, skipped";
+        continue;
+    }
 
-                $materialCode = trim($row['A'] ?? '');
-                $description = trim($row['B'] ?? '');
-                $uom = trim($row['C'] ?? '');
+    $materialCode = trim($row['A'] ?? '');
+    $description = trim($row['B'] ?? '');
+    $uom = trim($row['C'] ?? '');
 
-                // Log every row for debugging
-                if ($debugInfo['total_loops'] <= 50) { // Log first 50 for debugging
-                    $debugInfo['loop_details'][] = "Row {$i}: Code='{$materialCode}', Desc='{$description}'";
-                }
+    // MANUAL DEBUG LOG: Track every item attempt
+    $itemDebug = [
+        'row' => $i,
+        'code' => $materialCode,
+        'desc' => substr($description, 0, 30), // First 30 chars
+        'status' => 'unknown'
+    ];
 
-                // Skip completely empty rows
-                if (empty($materialCode) && empty($description)) {
-                    $debugInfo['empty_rows']++;
-                    continue;
-                }
+    // Log every row for debugging
+    if ($debugInfo['total_loops'] <= 50) { // Log first 50 for debugging
+        $debugInfo['loop_details'][] = "Row {$i}: Code='{$materialCode}', Desc='{$description}'";
+    }
 
-                // IMPROVED: More flexible material code validation
-                if (empty($materialCode)) {
-                    $debugInfo['skipped_rows']++;
-                    $debugInfo['loop_details'][] = "Row {$i}: Empty material code, skipped";
-                    continue;
-                }
+    // Skip completely empty rows
+    if (empty($materialCode) && empty($description)) {
+        $debugInfo['empty_rows']++;
+        $itemDebug['status'] = 'empty_row';
+        continue;
+    }
 
-                if (!$this->isValidMaterialCode($materialCode)) {
-                    $debugInfo['invalid_material_codes'][] = $materialCode;
-                    $debugInfo['skipped_rows']++;
-                    $debugInfo['loop_details'][] = "Row {$i}: Invalid material code '{$materialCode}', skipped";
-                    continue;
-                }
+    // IMPROVED: More flexible material code validation
+    if (empty($materialCode)) {
+        $debugInfo['skipped_rows']++;
+        $debugInfo['loop_details'][] = "Row {$i}: Empty material code, skipped";
+        $itemDebug['status'] = 'empty_code';
+        continue;
+    }
 
-                // Extract forecasts with detailed logging
-                $forecasts = [];
-                $forecastDetails = [];
-                foreach ($monthColumns as $colIndex => $dateString) {
-                    $quantity = $row[$colIndex] ?? '';
-                    $forecastDetails[] = "Col {$colIndex}({$dateString}): '{$quantity}'";
+    // SPECIAL DEBUG for ZH84680 and last few items
+    if ($materialCode === 'ZH84680' || $i >= count($data) - 5) {
+        Log::info('SPECIAL ITEM DEBUG', [
+            'row' => $i,
+            'material_code' => $materialCode,
+            'description' => $description,
+            'is_valid_code' => $this->isValidMaterialCode($materialCode),
+            'raw_row_sample' => array_slice($row, 0, 10)
+        ]);
+    }
 
-                    // FIXED: Clean and validate numeric values
-                    $cleanQuantity = $this->cleanNumericValue($quantity);
-                    if ($cleanQuantity !== null && $cleanQuantity > 0) {
-                        $forecasts[$dateString] = $cleanQuantity;
-                    }
-                }
+    $isValidCode = $this->isValidMaterialCode($materialCode);
+    if (!$isValidCode) {
+        $debugInfo['invalid_material_codes'][] = $materialCode;
+        $debugInfo['skipped_rows']++;
+        $debugInfo['loop_details'][] = "Row {$i}: Invalid material code '{$materialCode}', skipped";
+        $itemDebug['status'] = 'invalid_code';
+        
+        // SPECIAL LOG for invalid codes
+        Log::warning('Invalid Material Code', [
+            'row' => $i,
+            'code' => $materialCode,
+            'length' => strlen($materialCode),
+            'patterns_tested' => $this->testAllPatterns($materialCode)
+        ]);
+        continue;
+    }
 
-                // Log forecast details for first few items
-                if ($debugInfo['total_loops'] <= 10) {
-                    $debugInfo['loop_details'][] = "Row {$i} forecasts: " . implode(', ', $forecastDetails);
-                }
+    // Extract forecasts with detailed logging
+    $forecasts = [];
+    $forecastDetails = [];
+    foreach ($monthColumns as $colIndex => $dateString) {
+        $quantity = $row[$colIndex] ?? '';
+        $forecastDetails[] = "Col {$colIndex}({$dateString}): '{$quantity}'";
 
-                // Include items even without forecasts for debugging
-                if (!empty($forecasts)) {
-                    $result['items'][] = [
-                        'material_code' => $materialCode,
-                        'description' => $description,
-                        'uom' => $uom,
-                        'forecasts' => $forecasts
-                    ];
-                    $debugInfo['processed_rows']++;
-                } else {
-                    $debugInfo['no_forecast_rows']++;
-                    if ($debugInfo['no_forecast_rows'] <= 10) { // Log first 10 items without forecasts
-                        $debugInfo['loop_details'][] = "Row {$i}: '{$materialCode}' has no forecast data";
-                    }
-                }
-            }
+        // FIXED: Clean and validate numeric values
+        $cleanQuantity = $this->cleanNumericValue($quantity);
+        if ($cleanQuantity !== null && $cleanQuantity > 0) {
+            $forecasts[$dateString] = $cleanQuantity;
+        }
+    }
+
+    // SPECIAL DEBUG for forecast extraction
+    if ($materialCode === 'ZH84680' || empty($forecasts)) {
+        Log::info('FORECAST EXTRACTION DEBUG', [
+            'row' => $i,
+            'material_code' => $materialCode,
+            'forecasts_found' => count($forecasts),
+            'forecast_details' => $forecastDetails,
+            'first_5_raw_values' => array_slice($row, 3, 5) // First 5 forecast columns
+        ]);
+    }
+
+    // Log forecast details for first few items
+    if ($debugInfo['total_loops'] <= 10) {
+        $debugInfo['loop_details'][] = "Row {$i} forecasts: " . implode(', ', $forecastDetails);
+    }
+
+    // Include items even without forecasts for debugging
+    if (!empty($forecasts)) {
+        $result['items'][] = [
+            'material_code' => $materialCode,
+            'description' => $description,
+            'uom' => $uom,
+            'forecasts' => $forecasts
+        ];
+        $debugInfo['processed_rows']++;
+        $itemDebug['status'] = 'success';
+        
+        // LOG SUCCESS for last few items
+        if ($i >= count($data) - 5) {
+            Log::info('ITEM SUCCESSFULLY EXTRACTED', [
+                'row' => $i,
+                'material_code' => $materialCode,
+                'forecast_count' => count($forecasts)
+            ]);
+        }
+    } else {
+        $debugInfo['no_forecast_rows']++;
+        $itemDebug['status'] = 'no_forecasts';
+        
+        // LOG FAILURE for items without forecasts
+        Log::warning('ITEM FAILED - NO FORECASTS', [
+            'row' => $i,
+            'material_code' => $materialCode,
+            'all_raw_forecast_values' => array_slice($row, 3, 15), // All forecast columns
+            'all_cleaned_values' => $this->debugCleanAllValues($row, $monthColumns)
+        ]);
+        
+        if ($debugInfo['no_forecast_rows'] <= 10) { // Log first 10 items without forecasts
+            $debugInfo['loop_details'][] = "Row {$i}: '{$materialCode}' has no forecast data";
+        }
+    }
+
+    // Track item processing
+    $debugInfo['item_tracking'][] = $itemDebug;
+}
 
             return [
                 'success' => true,
@@ -340,46 +407,98 @@ class AIExcelForecastController extends Controller
     }
 
     /**
-     * FIXED: Clean numeric value from string (handle commas, spaces, etc.)
+     * ENHANCED: Clean numeric value with better handling for comma-separated numbers
      */
     private function cleanNumericValue($value)
     {
         if (empty($value) || $value === '-' || $value === '' || $value === null) {
             return null;
         }
-
+        
         // Convert to string first
         $value = (string)$value;
-
-        // Remove common non-numeric characters but keep decimal points
+        $value = trim($value);
+        
+        // Handle dash and empty specifically
+        if ($value === '-' || $value === '') {
+            return null;
+        }
+        
+        // ENHANCED: Handle comma thousands separator (1,015 → 1015)
+        $value = str_replace(',', '', $value);
+        
+        // Remove spaces and other non-numeric characters but keep decimal points and minus sign
         $cleaned = preg_replace('/[^\d\.\-]/', '', $value);
-
+        
+        // Additional validation: ensure it's not just dots or dashes
+        if ($cleaned === '' || $cleaned === '.' || $cleaned === '-') {
+            return null;
+        }
+        
         // Check if it's a valid number after cleaning
         if (is_numeric($cleaned)) {
-            return (float)$cleaned;
+            $result = (float)$cleaned;
+            // Return null for negative numbers in forecast context
+            return $result < 0 ? null : $result;
         }
-
+        
         return null;
     }
+
+    private function debugCleanAllValues($row, $monthColumns)
+{
+    $results = [];
+    foreach ($monthColumns as $colIndex => $dateString) {
+        $quantity = $row[$colIndex] ?? '';
+        $cleaned = $this->cleanNumericValue($quantity);
+        $results[] = [
+            'col' => $colIndex,
+            'date' => $dateString,
+            'raw' => $quantity,
+            'cleaned' => $cleaned,
+            'is_valid' => ($cleaned !== null && $cleaned > 0)
+        ];
+    }
+    return $results;
+}
 
     /**
      * IMPROVED: More flexible material code validation
      */
     private function isValidMaterialCode($code)
     {
-        if (empty($code) || strlen($code) < 3) {
+        if (empty($code) || strlen(trim($code)) < 2) {
             return false;
         }
-
-        // Accept various patterns:
-        // - VDH7740 (original pattern)
-        // - V-DH-7740 (with dashes)
-        // - VDH_7740 (with underscores)
-        // - vdh7740 (lowercase)
-        // - VDH7740A (with suffix letter)
-        // - 12345ABC (numeric start)
-        return preg_match('/^[A-Za-z0-9][A-Za-z0-9\-_\.]*[A-Za-z0-9]$/', $code) ||
-            preg_match('/^[A-Za-z0-9]{3,}$/', $code);
+        
+        $code = trim($code);
+        
+        // SPECIFIC FIX: Add explicit pattern for ZH84680 type codes
+        $patterns = [
+            '/^[A-Z]{2}\d{5}$/',                         // ZH84680, WW35140, ZA32050 (2 letters + 5 digits)
+            '/^[A-Z]{3}\d{4,5}[A-Z]?$/',                // VAP4460, VDH7740, VEG2610 (3 letters + 4-5 digits + optional letter)
+            '/^[A-Za-z]{2,3}\d{4,5}[A-Za-z0-9]*$/',     // General flexible pattern
+            '/^[A-Za-z0-9][A-Za-z0-9\-_\.]*[A-Za-z0-9]$/', // Pattern with separators
+            '/^[A-Za-z0-9]{3,}$/'                        // Simple alphanumeric 3+ chars
+        ];
+        
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, strtoupper($code))) {
+                return true;
+            }
+        }
+        
+        // ADDITIONAL CHECK: Explicit validation for codes like ZH84680
+        if (preg_match('/^[A-Z]{2}\d{5}$/', strtoupper($code))) {
+            return true;
+        }
+        
+        // Final fallback: if it looks like a reasonable code, accept it
+        if (preg_match('/^[A-Za-z]\w*\d+/', $code) && strlen($code) >= 3) {
+            return true;
+        }
+        
+        return false;
     }
 
     /**
@@ -781,7 +900,9 @@ PROMPT;
             ];
 
             if ($headerRowIndex !== null) {
-                for ($i = $headerRowIndex + 1; $i < count($data); $i++) {
+                $totalRows = count($data);
+for ($i = $headerRowIndex + 1; $i < $totalRows; $i++) {
+    Log::info("Processing index {$i} of total " . $totalRows . " rows");
                     $analysis['statistics']['total_rows_analyzed']++;
                     $row = $data[$i];
 
@@ -834,7 +955,7 @@ PROMPT;
                                 $quantity = $row[$colIndex] ?? '';
                                 // FIXED: Use same cleaning function for consistency
                                 $cleanQuantity = $this->cleanNumericValue($quantity);
-                                if ($cleanQuantity !== null && $cleanQuantity > 0) {
+                                if ($cleanQuantity !== null && $cleanQuantity >= 0) {
                                     $rowAnalysis['forecasts'][$dateString] = $cleanQuantity;
                                     $rowAnalysis['forecast_count']++;
                                 }
