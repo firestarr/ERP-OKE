@@ -638,9 +638,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('vendors/{vendor}/preferred-currency', 'App\Http\Controllers\Api\VendorController@updatePreferredCurrency');
     // Accounting Module Routes
     Route::prefix('accounting')->group(function () {
-        // Chart of Accounts
+        // Existing Chart of Accounts routes
         Route::get('chart-of-accounts/hierarchy', [ChartOfAccountController::class, 'hierarchy']);
         Route::apiResource('chart-of-accounts', ChartOfAccountController::class);
+
+        // Multi-Currency Chart of Accounts routes
+        Route::get('chart-of-accounts/currencies/available', [ChartOfAccountController::class, 'getAvailableCurrencies']);
+        Route::get('chart-of-accounts/{accountId}/balances-in-currencies', [ChartOfAccountController::class, 'getBalanceInCurrencies']);
+        Route::get('chart-of-accounts/trial-balance/currency', [ChartOfAccountController::class, 'getTrialBalanceInCurrency']);
+        Route::get('chart-of-accounts/hierarchy/currencies', [ChartOfAccountController::class, 'hierarchyWithCurrencies']);
+        Route::post('chart-of-accounts/convert-balance', [ChartOfAccountController::class, 'convertBalance']);
 
         // Accounting Periods
         Route::get('accounting-periods/current', [AccountingPeriodController::class, 'current']);
